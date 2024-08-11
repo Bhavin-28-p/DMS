@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage NGOs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .ngo-list-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .ngo-item {
+            background-color: #fff;
+            margin: 10px 0;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ngo-item h3 {
+            margin: 0;
+        }
+
+        .ngo-item button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .approve-button {
+            background-color: #28a745;
+        }
+
+        .reject-button {
+            background-color: #dc3545;
+        }
+
+        .remove-button {
+            background-color: #dc3545;
+        }
+
+        .approve-button:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+
+        .reject-button:hover, .remove-button:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <h2>Admin - Manage NGOs</h2>
+    <div class="ngo-list-container" id="pending-ngo-list">
+        <!-- Pending NGO registrations will be listed here -->
+    </div>
+    <div class="ngo-list-container" id="approved-ngo-list">
+        <!-- Approved NGOs will be listed here -->
+    </div>
+
+    <script>
+        // Example data: Replace this with a real API call to fetch data from your backend
+        const pendingNgos = [
+            { id: 1, name: "NGO 1", address: "123 Street, City, Country", contact: "1234567890", description: "Description of NGO 1", donations: "Clothes, Food, Money", upi: "barc.png" },
+            { id: 2, name: "NGO 2", address: "456 Avenue, City, Country", contact: "0987654321", description: "Description of NGO 2", donations: "Books, Toys, Money", upi: "about_back.jpg" }
+        ];
+
+        const approvedNgos = [
+            { id: 3, name: "NGO 3", address: "789 Boulevard, City, Country", contact: "1122334455", description: "Description of NGO 3", donations: "Clothes, Food, Money", upi: "upi.png" }
+        ];
+
+        function loadPendingNgos() {
+            const ngoList = document.getElementById('pending-ngo-list');
+            ngoList.innerHTML = pendingNgos.map(ngo => `
+                <div class="ngo-item" data-id="${ngo.id}">
+                    <div>
+                        <h3>${ngo.name}</h3>
+                        <p>${ngo.address}</p>
+                        <p>${ngo.contact}</p>
+                        <p>${ngo.description}</p>
+                        <p><strong>Accepting Donations:</strong> ${ngo.donations}</p>
+                        <p><strong>UPI Barcode:</strong></p>
+                        <img src="${ngo.upi}" alt="UPI Barcode" style="width: 100%; max-width: 100px;">
+                    </div>
+                    <div>
+                        <button class="approve-button" onclick="approveNgo(${ngo.id})">Approve</button>
+                        <button class="reject-button" onclick="rejectNgo(${ngo.id})">Reject</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadApprovedNgos() {
+            const ngoList = document.getElementById('approved-ngo-list');
+            ngoList.innerHTML = approvedNgos.map(ngo => `
+                <div class="ngo-item" data-id="${ngo.id}">
+                    <div>
+                        <h3>${ngo.name}</h3>
+                        <p>${ngo.address}</p>
+                        <p>${ngo.contact}</p>
+                        <p>${ngo.description}</p>
+                        <p><strong>Accepting Donations:</strong> ${ngo.donations}</p>
+                        <p><strong>UPI Barcode:</strong></p>
+                        <img src="${ngo.upi}" alt="UPI Barcode" style="width: 100%; max-width: 100px;">
+                    </div>
+                    <div>
+                        <button class="remove-button" onclick="removeNgo(${ngo.id})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function approveNgo(ngoId) {
+            fetch('approve_ngo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: ngoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('NGO approved successfully');
+                    moveNgoToApproved(ngoId);
+                } else {
+                    alert('Error approving NGO');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your request.');
+            });
+        }
+
+        function rejectNgo(ngoId) {
+            fetch('reject_ngo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: ngoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('NGO rejected successfully');
+                    removeNgoFromList(ngoId, 'pending');
+                } else {
+                    alert('Error rejecting NGO');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your request.');
+            });
+        }
+
+        function removeNgo(ngoId) {
+            fetch('remove_ngo.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: ngoId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('NGO removed successfully');
+                    removeNgoFromList(ngoId, 'approved');
+                } else {
+                    alert('Error removing NGO');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error processing your request.');
+            });
+        }
+
+        function moveNgoToApproved(ngoId) {
+            const ngo = pendingNgos.find(ngo => ngo.id === ngoId);
+            if (ngo) {
+                approvedNgos.push(ngo);
+                removeNgoFromList(ngoId, 'pending');
+                loadApprovedNgos();
+            }
+        }
+
+        function removeNgoFromList(ngoId, listType) {
+            const ngoList = listType === 'pending' ? pendingNgos : approvedNgos;
+            const ngoIndex = ngoList.findIndex(ngo => ngo.id === ngoId);
+            if (ngoIndex !== -1) {
+                ngoList.splice(ngoIndex, 1);
+                if (listType === 'pending') {
+                    loadPendingNgos();
+                } else {
+                    loadApprovedNgos();
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPendingNgos();
+            loadApprovedNgos();
+        });
+    </script>
+</body>
+</html>
